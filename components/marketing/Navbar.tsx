@@ -4,12 +4,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { useAuth, UserButton } from "@clerk/nextjs";
 import { Menu, X, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { isSignedIn } = useAuth();  // ← this replaces SignedIn/SignedOut
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
@@ -39,29 +40,31 @@ export default function Navbar() {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Show these when user is NOT logged in */}
-            <SignedOut>
-              <Link href="/sign-in">
-                <Button variant="ghost" className="text-slate-300 hover:text-white">
-                  Sign in
-                </Button>
-              </Link>
-              <Link href="/sign-up">
-                <Button className="bg-cyan-500 hover:bg-cyan-600 text-white">
-                  Get started free
-                </Button>
-              </Link>
-            </SignedOut>
-
-            {/* Show this when user IS logged in */}
-            <SignedIn>
-              <Link href="/dashboard">
-                <Button variant="ghost" className="text-slate-300 hover:text-white">
-                  Dashboard
-                </Button>
-              </Link>
-              <UserButton afterSignOutUrl="/" />
-            </SignedIn>
+            {/* Not logged in */}
+            {!isSignedIn ? (
+              <>
+                <Link href="/sign-in">
+                  <Button variant="ghost" className="text-slate-300 hover:text-white">
+                    Sign in
+                  </Button>
+                </Link>
+                <Link href="/sign-up">
+                  <Button className="bg-cyan-500 hover:bg-cyan-600 text-white">
+                    Get started free
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              /* Logged in */
+              <>
+                <Link href="/dashboard">
+                  <Button variant="ghost" className="text-slate-300 hover:text-white">
+                    Dashboard
+                  </Button>
+                </Link>
+                <UserButton />
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -84,13 +87,21 @@ export default function Navbar() {
           <Link href="#features" className="text-slate-400 hover:text-white text-sm">Features</Link>
           <Link href="#how-it-works" className="text-slate-400 hover:text-white text-sm">How it works</Link>
           <Link href="#pricing" className="text-slate-400 hover:text-white text-sm">Pricing</Link>
-          <SignedOut>
-            <Link href="/sign-in"><Button variant="ghost" className="w-full text-slate-300">Sign in</Button></Link>
-            <Link href="/sign-up"><Button className="w-full bg-cyan-500 hover:bg-cyan-600">Get started free</Button></Link>
-          </SignedOut>
-          <SignedIn>
-            <Link href="/dashboard"><Button variant="ghost" className="w-full text-slate-300">Dashboard</Button></Link>
-          </SignedIn>
+
+          {!isSignedIn ? (
+            <>
+              <Link href="/sign-in">
+                <Button variant="ghost" className="w-full text-slate-300">Sign in</Button>
+              </Link>
+              <Link href="/sign-up">
+                <Button className="w-full bg-cyan-500 hover:bg-cyan-600">Get started free</Button>
+              </Link>
+            </>
+          ) : (
+            <Link href="/dashboard">
+              <Button variant="ghost" className="w-full text-slate-300">Dashboard</Button>
+            </Link>
+          )}
         </motion.div>
       )}
     </nav>

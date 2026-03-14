@@ -8,7 +8,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 
 export default function HeroSection() {
   return (
-    <section className="min-h-screen flex items-center justify-center px-4 pt-16">
+    <section className="min-h-screen flex items-center justify-center px-4 pt-25">
       <div className="max-w-4xl mx-auto text-center">
 
         {/* Badge */}
