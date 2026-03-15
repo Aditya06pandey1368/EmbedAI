@@ -6,6 +6,7 @@ import { Bot, Copy, Check, Code } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import Link from "next/link";
+import { MessageCircle } from "lucide-react";
 
 interface BotDetailsProps {
   bot: {
@@ -50,13 +51,20 @@ export default function BotDetails({ bot }: BotDetailsProps) {
         </div>
 
         {/* Active status badge */}
-        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-          bot.is_active
+        <div className={`px-3 py-1 rounded-full text-xs font-medium ${bot.is_active
             ? "bg-green-500/10 text-green-400 border border-green-500/20"
             : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
-        }`}>
+          }`}>
           {bot.is_active ? "● Active" : "○ Inactive"}
         </div>
+        <Link href={`/dashboard/bots/${bot.id}/chat`}>
+          <Button
+            className="bg-cyan-500 hover:bg-cyan-600 text-white gap-2"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Test Bot
+          </Button>
+        </Link>
       </div>
 
       {/* Bot Info Cards */}

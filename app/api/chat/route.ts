@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { chatModel } from "@/lib/gemini";
+import { generateChatResponse } from "@/lib/gemini";
 import { findRelevantChunks, buildPrompt } from "@/services/rag";
 
 export async function POST(req: Request) {
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Fetch bot details (name, welcome message etc.)
+    // Fetch bot details
     const { data: bot } = await supabaseAdmin
       .from("bots")
       .select("*")
@@ -31,10 +31,10 @@ export async function POST(req: Request) {
     // Find relevant chunks using vector search
     const relevantChunks = await findRelevantChunks(question, botId);
 
-    // Build the prompt with context
+    // Build prompt with context
     const prompt = buildPrompt(question, relevantChunks, bot.name);
 
-    // Get or create a chat session
+    // Get or create session
     let currentSessionId = sessionId;
     if (!currentSessionId) {
       const { data: session } = await supabaseAdmin
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       currentSessionId = session?.id;
     }
 
-    // Save user message to database
+    // Save user message
     await supabaseAdmin.from("chat_messages").insert({
       session_id: currentSessionId,
       bot_id: botId,
@@ -53,63 +53,27 @@ export async function POST(req: Request) {
       content: question,
     });
 
-    // Stream the AI response token by token
-    const encoder = new TextEncoder();
+    // Generate AI response
+    const responseText = await generateChatResponse(prompt);
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        let fullResponse = "";
-
-        try {
-          // generateContentStream = streams tokens as they are generated
-          const result = await chatModel.generateContentStream(prompt);
-
-          for await (const chunk of result.stream) {
-            const text = chunk.text();
-            fullResponse += text;
-
-            // Send each token to the client immediately
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ text })}\n\n`)
-            );
-          }
-
-          // Save complete AI response to database
-          await supabaseAdmin.from("chat_messages").insert({
-            session_id: currentSessionId,
-            bot_id: botId,
-            role: "assistant",
-            content: fullResponse,
-          });
-
-          // Update bot message count
-          await supabaseAdmin
-            .from("bots")
-            .update({ total_messages: bot.total_messages + 1 })
-            .eq("id", botId);
-
-          // Signal stream is complete
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-          controller.close();
-
-        } catch (error) {
-          controller.enqueue(
-            encoder.encode(
-              `data: ${JSON.stringify({ error: "AI response failed" })}\n\n`
-            )
-          );
-          controller.close();
-        }
-      },
+    // Save assistant message
+    await supabaseAdmin.from("chat_messages").insert({
+      session_id: currentSessionId,
+      bot_id: botId,
+      role: "assistant",
+      content: responseText,
     });
 
-    // Return as Server-Sent Events
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      },
+    // Update bot message count
+    await supabaseAdmin
+      .from("bots")
+      .update({ total_messages: bot.total_messages + 1 })
+      .eq("id", botId);
+
+    // Return response
+    return NextResponse.json({
+      text: responseText,
+      sessionId: currentSessionId,
     });
 
   } catch (error) {
