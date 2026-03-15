@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase";
-import BotsList from "@/components/dashboard/BotsList";
+import BotsList from "../../../../components/dashboard/BotsList";
 
 export default async function BotsPage() {
   const { userId } = await auth();

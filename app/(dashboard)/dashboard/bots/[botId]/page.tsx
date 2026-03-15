@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase";
-import BotDetails from "@/components/dashboard/BotDetails";
+import BotDetails from "../../../../../components/dashboard/BotDetails";
 
 interface Props {
   params: Promise<{ botId: string }>;

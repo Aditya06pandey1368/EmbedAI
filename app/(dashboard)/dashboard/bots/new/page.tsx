@@ -1,6 +1,6 @@
 // app/(dashboard)/dashboard/bots/new/page.tsx
 
-import CreateBotForm from "@/components/dashboard/CreateBotForm";
+import CreateBotForm from "../../../../../components/dashboard/CreateBotForm";
 
 export default function NewBotPage() {
   return (

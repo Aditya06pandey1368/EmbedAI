@@ -33,16 +33,20 @@ export async function POST(req: Request) {
 
   const { name, welcome_message, primary_color } = await req.json();
 
-  // Validate input
   if (!name || name.trim() === "") {
     return NextResponse.json({ error: "Bot name is required" }, { status: 400 });
   }
 
-  // First make sure user exists in our DB
-  // (in case webhook hasn't fired yet)
-  await supabaseAdmin
+  // Upsert user first
+  const { error: userError } = await supabaseAdmin
     .from("users")
     .upsert({ id: userId, email: "" }, { onConflict: "id", ignoreDuplicates: true });
+
+  // ← ADD THIS
+  if (userError) {
+    console.error("User upsert error:", userError);
+    return NextResponse.json({ error: userError.message }, { status: 500 });
+  }
 
   const { data, error } = await supabaseAdmin
     .from("bots")
@@ -55,7 +59,9 @@ export async function POST(req: Request) {
     .select()
     .single();
 
+  // ← ADD THIS
   if (error) {
+    console.error("Bot insert error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
