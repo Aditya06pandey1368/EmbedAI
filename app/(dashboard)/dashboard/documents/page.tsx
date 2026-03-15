@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase";
-import DocumentsManager from "@/components/dashboard/DocumentsManager";
+import DocumentsManager from "../../../../components/dashboard/DocumentsManager";
 
 export default async function DocumentsPage() {
   const { userId } = await auth();
