@@ -1,6 +1,6 @@
 // services/document-processor.ts
 
-import pdf from "pdf-parse";
+const pdfParse = require("pdf-parse");
 import { generateEmbedding } from "@/lib/gemini";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -8,7 +8,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 // STEP 1: Extract text from PDF buffer
 // ============================================
 export async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-  const data = await pdf(buffer);
+  const data = await pdfParse(buffer);
   return data.text;
 }
 
