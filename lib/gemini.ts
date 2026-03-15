@@ -1,22 +1,36 @@
 // lib/gemini.ts
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { pipeline } from "@xenova/transformers";
 
-// Initialize Gemini with your API key
+// Gemini for CHAT
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-// Model for CHAT (generating answers)
 export const chatModel = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash", // free, fast, generous limits
+  model: "gemini-1.5-flash",
 });
 
-// Model for EMBEDDINGS (converting text to vectors)
-export const embeddingModel = genAI.getGenerativeModel({
-  model: "text-embedding-004", // free, 768 dimensions
-});
+// Singleton promise — ensures model loads ONCE even if called simultaneously
+let pipelinePromise: Promise<any> | null = null;
 
-// Helper function: convert any text to a vector (array of numbers)
+async function getEmbeddingPipeline() {
+  if (!pipelinePromise) {
+    console.log("⏳ Loading embedding model (first time only)...");
+    pipelinePromise = pipeline(
+      "feature-extraction",
+      "Xenova/all-MiniLM-L6-v2"
+    );
+  }
+  return pipelinePromise;
+}
+
 export async function generateEmbedding(text: string): Promise<number[]> {
-  const result = await embeddingModel.embedContent(text);
-  return result.embedding.values;
+  const extractor = await getEmbeddingPipeline();
+
+  const output = await extractor(text, {
+    pooling: "mean",
+    normalize: true,
+  });
+
+  return Array.from(output.data) as number[];
 }

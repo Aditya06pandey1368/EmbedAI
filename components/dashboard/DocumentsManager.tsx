@@ -186,6 +186,7 @@ export default function DocumentsManager({ bots }: { bots: BotOption[] }) {
 
           {/* Upload Zone */}
           <motion.div
+            suppressHydrationWarning
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}

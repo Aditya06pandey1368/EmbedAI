@@ -11,7 +11,9 @@
   "dependencies": {
     "@clerk/nextjs": "^7.0.4",
     "@google/generative-ai": "^0.24.1",
+    "@huggingface/inference": "^4.13.15",
     "@supabase/supabase-js": "^2.99.1",
+    "@xenova/transformers": "^2.17.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.36.0",
