@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase";
-import ChatHistory from "@/components/dashboard/ChatHistory";
+import ChatHistory from "../../../../components/dashboard/ChatHistory";
 
 export default async function HistoryPage() {
   const { userId } = await auth();
