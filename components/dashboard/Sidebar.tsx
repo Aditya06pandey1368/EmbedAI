@@ -91,19 +91,7 @@ export default function Sidebar() {
                 })}
             </nav>
 
-            {/* Bottom: Plan Badge */}
-            <div className="p-4 border-t border-slate-800">
-                <div className="bg-slate-800 rounded-xl p-4">
-                    <p className="text-slate-400 text-xs mb-1">Current Plan</p>
-                    <p className="text-white font-semibold text-sm">Starter — Free</p>
-                    <Link
-                        href="/dashboard/settings"
-                        className="text-cyan-400 text-xs mt-2 block hover:text-cyan-300 transition-colors"
-                    >
-                        Upgrade to Pro →
-                    </Link>
-                </div>
-            </div>
+            
             {/* Bottom section */}
             <div className="p-4 border-t border-slate-800 space-y-2">
                 {/* Admin link — hardcoded for now, only you will see it */}
@@ -114,7 +102,7 @@ export default function Sidebar() {
                     </div>
                 </Link>
 
-                <div className="bg-slate-800 rounded-xl p-4">
+                <div className="bg-slate-800 rounded-xl p-4 mt-3">
                     <p className="text-slate-400 text-xs mb-1">Current Plan</p>
                     <p className="text-white font-semibold text-sm">Starter — Free</p>
                     <Link
