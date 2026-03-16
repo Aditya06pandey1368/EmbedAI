@@ -3,7 +3,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase";
-import AnalyticsDashboard from "@/components/dashboard/AnalyticsDashboard";
+import AnalyticsDashboard from "../../../../components/dashboard/AnalyticsDashboard";
 
 export default async function AnalyticsPage() {
   const { userId } = await auth();
