@@ -20,6 +20,13 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
   const { user: clerkUser } = useUser();
   const [saved, setSaved] = useState(false);
 
+  // Fix 3: Each toggle has its own state
+  const [notifications, setNotifications] = useState({
+    weeklyReport: true,
+    botAlerts: true,
+    announcements: false,
+  });
+
   const planDetails = {
     starter: { label: "Starter", color: "text-slate-400", bg: "bg-slate-400/10", desc: "Free forever" },
     pro: { label: "Pro", color: "text-cyan-400", bg: "bg-cyan-400/10", desc: "$29/month" },
@@ -33,8 +40,29 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
     setTimeout(() => setSaved(false), 2000);
   }
 
+  function toggleNotification(key: keyof typeof notifications) {
+    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  const notificationItems = [
+    {
+      key: "weeklyReport" as const,
+      label: "Weekly usage report",
+      desc: "Get a summary every Monday",
+    },
+    {
+      key: "botAlerts" as const,
+      label: "Bot error alerts",
+      desc: "Know when your bot fails to respond",
+    },
+    {
+      key: "announcements" as const,
+      label: "New feature announcements",
+      desc: "Be the first to know about updates",
+    },
+  ];
+
   return (
-    /* FIXED: Removed max-w and mx-auto. Now it just takes up 100% of the width available to it. */
     <div className="w-full space-y-6 pb-8">
 
       {/* Header */}
@@ -57,7 +85,6 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
         </div>
 
         <div className="space-y-4">
-          {/* Made the inputs wider to match the new large page size */}
           <div className="space-y-2 w-full max-w-3xl">
             <Label className="text-slate-400 text-sm">Full Name</Label>
             <Input
@@ -74,18 +101,11 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
               className="bg-slate-800 border-slate-700 text-white disabled:opacity-60 w-full"
             />
           </div>
-          
+
+          {/* Fix 1: Removed broken Clerk link, replaced with helpful note */}
           <p className="text-slate-500 text-xs sm:text-sm">
-            To update your name or email, visit your{" "}
-            <a
-              href="https://accounts.clerk.dev/user"
-              target="_blank"
-              rel="noreferrer"
-              className="text-cyan-400 hover:underline"
-            >
-              Clerk account settings
-            </a>
-            .
+            Profile information is managed through your authentication provider.
+            Contact support to update your details.
           </p>
         </div>
       </motion.div>
@@ -111,9 +131,19 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
             </div>
             <p className="text-slate-400 text-sm">{plan.desc}</p>
           </div>
-          <Button className="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-600 text-white">
-            Upgrade Plan
-          </Button>
+
+          {/* Fix 2: Show "Coming Soon" instead of a broken upgrade button */}
+          <div className="flex flex-col items-start sm:items-end gap-1">
+            <Button
+              disabled
+              className="w-full sm:w-auto bg-slate-700 text-slate-400 cursor-not-allowed gap-2"
+            >
+              Upgrade Plan — Coming Soon
+            </Button>
+            <p className="text-slate-600 text-xs">
+              Paid plans will be available soon.
+            </p>
+          </div>
         </div>
 
         {/* Plan limits */}
@@ -153,21 +183,34 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
         </div>
 
         <div className="space-y-4 max-w-4xl">
-          {[
-            { label: "Weekly usage report", desc: "Get a summary every Monday" },
-            { label: "Bot error alerts", desc: "Know when your bot fails to respond" },
-            { label: "New feature announcements", desc: "Be the first to know about updates" },
-          ].map((item) => (
-            <div key={item.label} className="flex items-center justify-between py-2 gap-4">
-              <div className="flex-1">
-                <p className="text-white text-sm font-medium">{item.label}</p>
-                <p className="text-slate-500 text-xs mt-0.5">{item.desc}</p>
+          {notificationItems.map((item) => {
+            const isOn = notifications[item.key];
+            return (
+              <div
+                key={item.key}
+                className="flex items-center justify-between py-2 gap-4"
+              >
+                <div className="flex-1">
+                  <p className="text-white text-sm font-medium">{item.label}</p>
+                  <p className="text-slate-500 text-xs mt-0.5">{item.desc}</p>
+                </div>
+
+                {/* Fix 3: Working toggle button */}
+                <button
+                  onClick={() => toggleNotification(item.key)}
+                  className={`w-11 h-6 rounded-full relative transition-colors duration-200 flex-shrink-0 ${
+                    isOn ? "bg-cyan-500" : "bg-slate-700"
+                  }`}
+                >
+                  <div
+                    className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
+                      isOn ? "translate-x-5" : "translate-x-1"
+                    }`}
+                  />
+                </button>
               </div>
-              <button className="w-11 h-6 bg-cyan-500 rounded-full relative transition-colors flex-shrink-0">
-                <div className="w-4 h-4 bg-white rounded-full absolute right-1 top-1 transition-transform" />
-              </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="mt-6 pt-6 border-t border-slate-800">
@@ -183,7 +226,7 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
           </Button>
         </div>
       </motion.div>
-      
+
     </div>
   );
 }
