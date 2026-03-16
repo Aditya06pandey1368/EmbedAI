@@ -1,55 +1,79 @@
 // components/dashboard/DashboardOverview.tsx
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Bot,
-  FileText,
-  MessageSquare,
-  TrendingUp,
-  Plus,
-  ArrowRight,
-} from "lucide-react";
+import { Bot, FileText, MessageSquare, TrendingUp, Plus, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-// Stat card data
-const stats = [
-  {
-    label: "Total Bots",
-    value: "0",
-    icon: Bot,
-    color: "text-cyan-400",
-    bg: "bg-cyan-400/10",
-    change: "Create your first bot",
-  },
-  {
-    label: "Documents Uploaded",
-    value: "0",
-    icon: FileText,
-    color: "text-purple-400",
-    bg: "bg-purple-400/10",
-    change: "Upload documents to train",
-  },
-  {
-    label: "Questions Answered",
-    value: "0",
-    icon: MessageSquare,
-    color: "text-green-400",
-    bg: "bg-green-400/10",
-    change: "This week",
-  },
-  {
-    label: "Avg. Response Quality",
-    value: "—",
-    icon: TrendingUp,
-    color: "text-yellow-400",
-    bg: "bg-yellow-400/10",
-    change: "Available after first chat",
-  },
-];
+interface Stats {
+  totalBots: number;
+  totalDocuments: number;
+  totalMessages: number;
+  messagesThisWeek: number;
+}
 
 export default function DashboardOverview() {
+  const [stats, setStats] = useState<Stats>({
+    totalBots: 0,
+    totalDocuments: 0,
+    totalMessages: 0,
+    messagesThisWeek: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  async function loadStats() {
+    try {
+      const res = await fetch("/api/overview");
+      const data = await res.json();
+      setStats(data.stats);
+    } catch (err) {
+      console.error("Failed to load stats:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const statCards = [
+    {
+      label: "Total Bots",
+      value: stats.totalBots,
+      icon: Bot,
+      color: "text-cyan-400",
+      bg: "bg-cyan-400/10",
+      change: "Active chatbots",
+    },
+    {
+      label: "Documents Uploaded",
+      value: stats.totalDocuments,
+      icon: FileText,
+      color: "text-purple-400",
+      bg: "bg-purple-400/10",
+      change: "Trained documents",
+    },
+    {
+      label: "Questions Answered",
+      value: stats.totalMessages,
+      icon: MessageSquare,
+      color: "text-green-400",
+      bg: "bg-green-400/10",
+      change: "Total questions",
+    },
+    {
+      label: "This Week",
+      value: stats.messagesThisWeek,
+      icon: TrendingUp,
+      color: "text-yellow-400",
+      bg: "bg-yellow-400/10",
+      change: "Questions this week",
+    },
+  ];
+
   return (
     <div className="space-y-8">
 
@@ -71,7 +95,7 @@ export default function DashboardOverview() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => (
+        {statCards.map((stat, index) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
@@ -85,60 +109,22 @@ export default function DashboardOverview() {
                 <stat.icon className={`w-5 h-5 ${stat.color}`} />
               </div>
             </div>
-            <p className="text-3xl font-extrabold text-white mb-1">
-              {stat.value}
-            </p>
-            <p className="text-slate-500 text-xs">{stat.change}</p>
+            {loading ? (
+              <div className="h-8 bg-slate-700 rounded animate-pulse w-1/3" />
+            ) : (
+              <p className="text-3xl font-extrabold text-white">{stat.value}</p>
+            )}
+            <p className="text-slate-500 text-xs mt-1">{stat.change}</p>
           </motion.div>
         ))}
       </div>
 
-      {/* Empty State — shown when user has no bots yet */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.4 }}
-        className="bg-slate-900 border border-slate-800 border-dashed rounded-2xl p-12 text-center"
-      >
-        <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Bot className="w-8 h-8 text-cyan-400" />
-        </div>
-        <h3 className="text-white font-bold text-xl mb-2">
-          Create your first AI bot
-        </h3>
-        <p className="text-slate-400 text-sm mb-6 max-w-md mx-auto">
-          Upload your documents, train your bot, and embed it on your
-          website in under 3 minutes.
-        </p>
-        <Link href="/dashboard/bots/new">
-          <Button className="bg-cyan-500 hover:bg-cyan-600 text-white gap-2">
-            Get started
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        </Link>
-      </motion.div>
-
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          {
-            title: "Create a bot",
-            desc: "Set up a new AI chatbot",
-            href: "/dashboard/bots/new",
-            color: "border-cyan-500/20 hover:border-cyan-500/50",
-          },
-          {
-            title: "Upload documents",
-            desc: "Add PDFs to train your bot",
-            href: "/dashboard/documents",
-            color: "border-purple-500/20 hover:border-purple-500/50",
-          },
-          {
-            title: "Get embed code",
-            desc: "Add the widget to your site",
-            href: "/dashboard/bots",
-            color: "border-green-500/20 hover:border-green-500/50",
-          },
+          { title: "Create a bot", desc: "Set up a new AI chatbot", href: "/dashboard/bots/new", color: "border-cyan-500/20 hover:border-cyan-500/50" },
+          { title: "Upload documents", desc: "Add PDFs to train your bot", href: "/dashboard/documents", color: "border-purple-500/20 hover:border-purple-500/50" },
+          { title: "View analytics", desc: "See how your bot is performing", href: "/dashboard/analytics", color: "border-green-500/20 hover:border-green-500/50" },
         ].map((action, index) => (
           <motion.div
             key={action.title}
