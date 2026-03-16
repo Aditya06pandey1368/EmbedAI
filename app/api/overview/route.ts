@@ -24,20 +24,35 @@ export async function GET() {
     .eq("status", "done");
 
   // Total messages
-  const { count: totalMessages } = await supabaseAdmin
-    .from("chat_messages")
-    .select("*", { count: "exact", head: true })
-    .eq("role", "user");
+  // Get user's bot IDs first
+const { data: userBots } = await supabaseAdmin
+  .from("bots")
+  .select("id")
+  .eq("user_id", userId);
 
-  // Messages this week
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+const botIds = userBots?.map((b) => b.id) ?? [];
 
-  const { count: messagesThisWeek } = await supabaseAdmin
-    .from("chat_messages")
-    .select("*", { count: "exact", head: true })
-    .eq("role", "user")
-    .gte("created_at", sevenDaysAgo.toISOString());
+// Total messages — only from user's bots
+const { count: totalMessages } = botIds.length > 0
+  ? await supabaseAdmin
+      .from("chat_messages")
+      .select("*", { count: "exact", head: true })
+      .eq("role", "user")
+      .in("bot_id", botIds)
+  : { count: 0 };
+
+// Messages this week — only from user's bots
+const sevenDaysAgo = new Date();
+sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+const { count: messagesThisWeek } = botIds.length > 0
+  ? await supabaseAdmin
+      .from("chat_messages")
+      .select("*", { count: "exact", head: true })
+      .eq("role", "user")
+      .in("bot_id", botIds)
+      .gte("created_at", sevenDaysAgo.toISOString())
+  : { count: 0 };
 
   return NextResponse.json({
     stats: {
