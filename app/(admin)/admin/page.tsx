@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
-import AdminOverview from "@/components/admin/AdminOverview";
+import AdminOverview from "../../../components/admin/AdminOverview";
 
 export default async function AdminPage() {
   try {
