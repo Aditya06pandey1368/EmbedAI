@@ -6,35 +6,44 @@ import type { NextRequest } from "next/server";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
-  "/bots(.*)",
-  "/documents(.*)",
-  "/analytics(.*)",
   "/admin(.*)",
 ]);
 
+const isPublicApiRoute = createRouteMatcher([
+  "/api/chat(.*)",
+  "/api/bots/public(.*)",
+  "/api/webhooks(.*)",
+  "/widget.js(.*)",
+]);
+
 export default clerkMiddleware((auth, req: NextRequest) => {
-  const { pathname } = req.nextUrl;
   const method = req.method;
 
-  // Handle ALL OPTIONS requests immediately
-  if (method === "OPTIONS") {
-  const response = new NextResponse(null, { status: 204 });
-  response.headers.set("Access-Control-Allow-Origin", "*");
-  response.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  response.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  response.headers.set("Access-Control-Max-Age", "86400");
-  return response;
-}
+  // For public API routes — handle CORS and skip Clerk completely
+  if (isPublicApiRoute(req)) {
+    if (method === "OPTIONS") {
+      const res = new NextResponse(null, { status: 204 });
+      res.headers.set("Access-Control-Allow-Origin", "*");
+      res.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+      res.headers.set("Access-Control-Allow-Headers", "Content-Type");
+      return res;
+    }
+    return NextResponse.next();
+  }
 
-  // Protect dashboard routes
+  // Only protect dashboard and admin
   if (isProtectedRoute(req)) {
     auth.protect();
   }
 });
 
 export const config = {
+  // KEY CHANGE: explicitly include API routes
   matcher: [
+    "/dashboard(.*)",
+    "/admin(.*)",
+    "/api/chat(.*)",
+    "/api/bots/public(.*)",
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
   ],
 };
