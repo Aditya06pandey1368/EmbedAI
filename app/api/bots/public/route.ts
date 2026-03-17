@@ -1,14 +1,18 @@
+// app/api/bots/public/route.ts
+
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
 export async function OPTIONS() {
-  return new NextResponse(null, {
+  return new Response(null, {
     status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
+    headers: corsHeaders,
   });
 }
 
@@ -17,7 +21,10 @@ export async function GET(req: Request) {
   const botId = searchParams.get("botId");
 
   if (!botId) {
-    return NextResponse.json({ error: "botId required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "botId required" },
+      { status: 400, headers: corsHeaders }
+    );
   }
 
   const { data: bot } = await supabaseAdmin
@@ -28,17 +35,14 @@ export async function GET(req: Request) {
     .single();
 
   if (!bot) {
-    return NextResponse.json({ error: "Bot not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Bot not found" },
+      { status: 404, headers: corsHeaders }
+    );
   }
 
   return NextResponse.json(
     { bot },
-    {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-    }
+    { headers: corsHeaders }
   );
 }
