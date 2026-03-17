@@ -2,6 +2,7 @@
 
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -11,26 +12,35 @@ const isProtectedRoute = createRouteMatcher([
   "/admin(.*)",
 ]);
 
-export default clerkMiddleware((auth, req) => {
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+const isPublicApiRoute = (pathname: string) =>
+  pathname.startsWith("/api/chat") ||
+  pathname.startsWith("/api/bots/public") ||
+  pathname.startsWith("/widget.js");
+
+export default clerkMiddleware((auth, req: NextRequest) => {
   const { pathname } = req.nextUrl;
 
-  // Add CORS headers for public API routes
-  if (
-    pathname.startsWith("/api/chat") ||
-    pathname.startsWith("/api/bots/public") ||
-    pathname.startsWith("/widget.js")
-  ) {
-    // Handle OPTIONS preflight — return immediately
-    if (req.method === "OPTIONS") {
-      return new NextResponse(null, {
-        status: 200,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
-      });
-    }
+  // Handle OPTIONS preflight FIRST — before Clerk does anything
+  if (req.method === "OPTIONS" && isPublicApiRoute(pathname)) {
+    return new NextResponse(null, {
+      status: 204,
+      headers: corsHeaders,
+    });
+  }
+
+  // Add CORS headers to public API responses
+  if (isPublicApiRoute(pathname)) {
+    const response = NextResponse.next();
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      response.headers.set(key, value);
+    });
+    return response;
   }
 
   // Protect dashboard routes
