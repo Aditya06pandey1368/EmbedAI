@@ -5,6 +5,18 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { generateChatResponse } from "@/lib/gemini";
 import { findRelevantChunks, buildPrompt } from "@/services/rag";
 
+
+export async function OPTIONS() {
+    return new NextResponse(null, {
+        status: 200,
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+        },
+    });
+}
+
 export async function POST(req: Request) {
     try {
         const { question, botId, sessionId } = await req.json();
@@ -76,7 +88,7 @@ export async function POST(req: Request) {
             {
                 headers: {
                     "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "POST",
+                    "Access-Control-Allow-Methods": "POST, OPTIONS",
                     "Access-Control-Allow-Headers": "Content-Type",
                 },
             }
@@ -86,7 +98,10 @@ export async function POST(req: Request) {
         console.error("Chat API error:", error);
         return NextResponse.json(
             { error: "Something went wrong" },
-            { status: 500 }
+            {
+                status: 500,
+                headers: { "Access-Control-Allow-Origin": "*" },
+            }
         );
     }
 }

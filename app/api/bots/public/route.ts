@@ -1,7 +1,16 @@
-// app/api/bots/public/route.ts
-
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
+}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -11,7 +20,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "botId required" }, { status: 400 });
   }
 
-  // Only return public-safe fields — never expose user_id or private data
   const { data: bot } = await supabaseAdmin
     .from("bots")
     .select("id, name, welcome_message, primary_color, is_active")
@@ -23,13 +31,13 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Bot not found" }, { status: 404 });
   }
 
-  // Add CORS headers so external websites can call this
   return NextResponse.json(
     { bot },
     {
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
       },
     }
   );
