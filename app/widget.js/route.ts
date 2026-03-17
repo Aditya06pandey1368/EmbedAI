@@ -18,7 +18,7 @@ export async function GET() {
   }
 
   // Base URL of EmbedAI platform
-  var BASE_URL = '${process.env.NEXT_PUBLIC_APP_URL}'.replace(/\\/+$/, '');
+  var BASE_URL = 'https://embed-ai-nu.vercel.app';
 
   // ============================================
   // STYLES
