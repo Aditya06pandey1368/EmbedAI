@@ -18,7 +18,7 @@ export async function GET() {
   }
 
   // Base URL of EmbedAI platform
-  var BASE_URL = '${process.env.NEXT_PUBLIC_APP_URL}';
+  var BASE_URL = '${process.env.NEXT_PUBLIC_APP_URL}'.replace(/\\/+$/, '');
 
   // ============================================
   // STYLES
