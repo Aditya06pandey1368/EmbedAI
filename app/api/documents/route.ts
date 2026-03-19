@@ -81,6 +81,41 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Bot not found" }, { status: 404 });
     }
 
+    // Add after bot verification, before file processing
+
+    // Get user plan
+    const { data: user } = await supabaseAdmin
+      .from("users")
+      .select("plan")
+      .eq("id", userId)
+      .single();
+
+    const PLAN_LIMITS = {
+      starter: { bots: 1, documents: 5, queries: 100 },
+      pro: { bots: 10, documents: 100, queries: 5000 },
+      enterprise: { bots: Infinity, documents: Infinity, queries: Infinity },
+    };
+
+    const plan = (user?.plan || "starter") as keyof typeof PLAN_LIMITS;
+    const docLimit = PLAN_LIMITS[plan].documents;
+
+    // Count existing documents for this bot
+    const { count: docCount } = await supabaseAdmin
+      .from("documents")
+      .select("*", { count: "exact", head: true })
+      .eq("bot_id", botId)
+      .eq("status", "done");
+
+    if ((docCount ?? 0) >= docLimit) {
+      return NextResponse.json(
+        {
+          error: `You have reached the ${plan} plan limit of ${docLimit} documents. Please upgrade your plan.`,
+          limitReached: true,
+        },
+        { status: 403 }
+      );
+    }
+
     // Convert file to buffer for processing
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
