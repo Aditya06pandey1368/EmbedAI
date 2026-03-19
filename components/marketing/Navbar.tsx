@@ -36,6 +36,10 @@ export default function Navbar() {
             <Link href="#pricing" className="text-slate-400 hover:text-white transition-colors text-sm">
               Pricing
             </Link>
+            // Find the desktop nav links section and add:
+            <Link href="#demo" className="text-slate-400 hover:text-white transition-colors text-sm">
+              Demo
+            </Link>
           </div>
 
           {/* Auth Buttons */}
