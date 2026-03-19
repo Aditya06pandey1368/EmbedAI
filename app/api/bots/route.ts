@@ -4,7 +4,12 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-// GET — fetch all bots for logged in user
+const PLAN_LIMITS = {
+  starter:    { bots: 1,         documents: 5,   queries: 100  },
+  pro:        { bots: 10,        documents: 100,  queries: 5000 },
+  enterprise: { bots: Infinity,  documents: Infinity, queries: Infinity },
+};
+
 export async function GET() {
   const { userId } = await auth();
   if (!userId) {
@@ -24,7 +29,6 @@ export async function GET() {
   return NextResponse.json({ bots: data });
 }
 
-// POST — create a new bot
 export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) {
@@ -37,16 +41,39 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Bot name is required" }, { status: 400 });
   }
 
-  // Upsert user first
-  const { error: userError } = await supabaseAdmin
+  // Get user plan
+  const { data: user } = await supabaseAdmin
     .from("users")
-    .upsert({ id: userId, email: "" }, { onConflict: "id", ignoreDuplicates: true });
+    .select("plan")
+    .eq("id", userId)
+    .single();
 
-  // ← ADD THIS
-  if (userError) {
-    console.error("User upsert error:", userError);
-    return NextResponse.json({ error: userError.message }, { status: 500 });
+  const plan = (user?.plan || "starter") as keyof typeof PLAN_LIMITS;
+  const limit = PLAN_LIMITS[plan].bots;
+
+  // Count existing bots
+  const { count: botCount } = await supabaseAdmin
+    .from("bots")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if ((botCount ?? 0) >= limit) {
+    return NextResponse.json(
+      {
+        error: `You have reached the ${plan} plan limit of ${limit} bot${limit === 1 ? "" : "s"}. Please upgrade to create more.`,
+        limitReached: true,
+      },
+      { status: 403 }
+    );
   }
+
+  // Upsert user
+  await supabaseAdmin
+    .from("users")
+    .upsert(
+      { id: userId, email: "" },
+      { onConflict: "id", ignoreDuplicates: true }
+    );
 
   const { data, error } = await supabaseAdmin
     .from("bots")
@@ -59,9 +86,7 @@ export async function POST(req: Request) {
     .select()
     .single();
 
-  // ← ADD THIS
   if (error) {
-    console.error("Bot insert error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
