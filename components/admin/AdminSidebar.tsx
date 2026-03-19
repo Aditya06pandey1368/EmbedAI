@@ -66,14 +66,6 @@ export default function AdminSidebar() {
         })}
       </nav>
 
-      {/* Back to Dashboard */}
-      <div className="p-4 border-t border-slate-800">
-        <Link href="/dashboard">
-          <div className="bg-slate-800 hover:bg-slate-700 transition-colors rounded-xl p-3 text-center cursor-pointer">
-            <p className="text-slate-400 text-xs">← Back to Dashboard</p>
-          </div>
-        </Link>
-      </div>
     </aside>
   );
 }
