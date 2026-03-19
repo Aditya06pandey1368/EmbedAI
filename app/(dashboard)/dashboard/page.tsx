@@ -2,13 +2,23 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import DashboardOverview from "../../../components/dashboard/DashboardOverview";
+import { supabaseAdmin } from "@/lib/supabase";
+import DashboardOverview from "@/components/dashboard/DashboardOverview";
 
 export default async function DashboardPage() {
   const { userId } = await auth();
-
-  // Extra protection — if somehow not logged in, redirect
   if (!userId) redirect("/sign-in");
+
+  // Check if admin → redirect directly to admin panel
+  const { data: user } = await supabaseAdmin
+    .from("users")
+    .select("is_admin")
+    .eq("id", userId)
+    .single();
+
+  if (user?.is_admin) {
+    redirect("/admin");
+  }
 
   return <DashboardOverview />;
 }
