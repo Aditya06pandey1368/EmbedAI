@@ -74,6 +74,7 @@ export default function DocumentsManager({ bots }: { bots: BotOption[] }) {
             const data = await res.json();
 
             if (!res.ok) {
+                const data = await res.json();
                 alert(data.error || "Upload failed");
                 return;
             }
@@ -198,8 +199,8 @@ export default function DocumentsManager({ bots }: { bots: BotOption[] }) {
                         onDrop={handleDrop}
                         animate={{ scale: dragOver ? 1.01 : 1 }}
                         className={`border-2 border-dashed rounded-2xl p-12 text-center transition-colors cursor-pointer ${dragOver
-                                ? "border-cyan-400 bg-cyan-400/5"
-                                : "border-slate-700 hover:border-slate-500 bg-slate-900"
+                            ? "border-cyan-400 bg-cyan-400/5"
+                            : "border-slate-700 hover:border-slate-500 bg-slate-900"
                             }`}
                         onClick={() => fileInputRef.current?.click()}
                     >
