@@ -92,3 +92,37 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ bot: data }, { status: 201 });
 }
+
+export async function DELETE(req: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const botId = searchParams.get("botId");
+
+  if (!botId) {
+    return NextResponse.json({ error: "botId required" }, { status: 400 });
+  }
+
+  // Verify bot belongs to user
+  const { data: bot } = await supabaseAdmin
+    .from("bots")
+    .select("id")
+    .eq("id", botId)
+    .eq("user_id", userId)
+    .single();
+
+  if (!bot) {
+    return NextResponse.json({ error: "Bot not found" }, { status: 404 });
+  }
+
+  // Delete bot — cascades to documents, chunks, sessions, messages
+  await supabaseAdmin
+    .from("bots")
+    .delete()
+    .eq("id", botId);
+
+  return NextResponse.json({ success: true });
+}
