@@ -31,33 +31,51 @@ export async function generateChatResponse(prompt: string): Promise<string> {
 }
 
 // ============================================
-// EMBEDDINGS — HuggingFace REST API
-// Works in both local and Vercel production
+// EMBEDDINGS — HuggingFace with retry
 // ============================================
-export async function generateEmbedding(text: string): Promise<number[]> {
-  const response = await fetch(
-    "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction",
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ inputs: text }),
+export async function generateEmbedding(
+  text: string,
+  retries: number = 3
+): Promise<number[]> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(
+        "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ inputs: text }),
+        }
+      );
+
+      // If model is loading — wait and retry
+      if (response.status === 503) {
+        console.log(`⏳ HuggingFace model loading, retry ${i + 1}/${retries}...`);
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        continue;
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HuggingFace error: ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      if (Array.isArray(data[0])) {
+        return data[0] as number[];
+      }
+      return data as number[];
+
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      console.log(`Retry ${i + 1}/${retries}...`);
+      await new Promise((resolve) => setTimeout(resolve, 3000));
     }
-  );
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("HuggingFace error:", errorText);
-    throw new Error(`Embedding failed: ${errorText}`);
   }
 
-  const data = await response.json();
-
-  // Response can be nested array or flat array
-  if (Array.isArray(data[0])) {
-    return data[0] as number[];
-  }
-  return data as number[];
+  throw new Error("Embedding failed after all retries");
 }
