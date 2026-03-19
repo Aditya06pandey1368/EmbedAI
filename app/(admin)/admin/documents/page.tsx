@@ -3,12 +3,12 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { supabaseAdmin } from "@/lib/supabase";
-import AdminDocumentsList from "../../../../components/admin/AdminDocumentsList";
+import AdminDocumentsList from "@/components/admin/AdminDocumentsList";
 
 export default async function AdminDocumentsPage() {
   try { await requireAdmin(); } catch { redirect("/dashboard"); }
 
-  const { data: documents } = await supabaseAdmin
+  const { data } = await supabaseAdmin
     .from("documents")
     .select(`
       id, name, status, file_size, chunk_count, created_at,
@@ -16,5 +16,8 @@ export default async function AdminDocumentsPage() {
     `)
     .order("created_at", { ascending: false });
 
-  return <AdminDocumentsList documents={documents ?? []} />;
+  // Cast to any to avoid complex Supabase join type issues
+  const documents = (data ?? []) as any[];
+
+  return <AdminDocumentsList documents={documents} />;
 }
