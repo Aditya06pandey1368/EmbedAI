@@ -9,15 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Bot, Loader2 } from "lucide-react";
 
-// ShadCN Input and Label — install if not already there
-// npx shadcn@latest add input label textarea
+interface CreateBotFormProps {
+  isAdmin?: boolean;
+}
 
-export default function CreateBotForm() {
+export default function CreateBotForm({ isAdmin = false }: CreateBotFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Form state
   const [name, setName] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState(
     "Hi! How can I help you today?"
@@ -25,7 +25,7 @@ export default function CreateBotForm() {
   const [primaryColor, setPrimaryColor] = useState("#0ea5e9");
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); // prevent page reload on form submit
+    e.preventDefault();
     setLoading(true);
     setError("");
 
@@ -43,13 +43,22 @@ export default function CreateBotForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Something went wrong");
+        // Show plan limit error clearly
+        if (data.limitReached) {
+          setError(data.error + " 🔒");
+        } else {
+          setError(data.error || "Something went wrong");
+        }
         return;
       }
 
-      // Redirect to the new bot's page after creation
-      router.push(`/dashboard/bots/${data.bot.id}`);
-      router.refresh(); // refresh server components
+      // Redirect based on who is creating the bot
+      if (isAdmin) {
+        router.push("/admin/bots");
+      } else {
+        router.push(`/dashboard/bots/${data.bot.id}`);
+      }
+      router.refresh();
 
     } catch {
       setError("Network error. Please try again.");
@@ -65,6 +74,15 @@ export default function CreateBotForm() {
       onSubmit={handleSubmit}
       className="bg-slate-900 border border-slate-800 rounded-2xl p-8 space-y-6"
     >
+      {/* Admin badge */}
+      {isAdmin && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+          <p className="text-red-400 text-sm font-medium">
+            🛡️ Creating as Admin — this bot will be owned by your admin account
+          </p>
+        </div>
+      )}
+
       {/* Bot Name */}
       <div className="space-y-2">
         <Label htmlFor="name" className="text-white font-medium">
@@ -118,7 +136,6 @@ export default function CreateBotForm() {
             onChange={(e) => setPrimaryColor(e.target.value)}
             className="bg-slate-800 border-slate-700 text-white w-36 font-mono"
           />
-          {/* Live preview */}
           <div
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium"
             style={{ backgroundColor: primaryColor }}
@@ -153,7 +170,7 @@ export default function CreateBotForm() {
         ) : (
           <>
             <Bot className="w-5 h-5 mr-2" />
-            Create Bot
+            {isAdmin ? "Create Company Bot" : "Create Bot"}
           </>
         )}
       </Button>
