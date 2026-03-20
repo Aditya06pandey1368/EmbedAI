@@ -5,9 +5,9 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const PLAN_LIMITS = {
-  starter:    { bots: 1,         documents: 5,   queries: 100  },
-  pro:        { bots: 10,        documents: 100,  queries: 5000 },
-  enterprise: { bots: Infinity,  documents: Infinity, queries: Infinity },
+  starter: { bots: 1, documents: 5, queries: 100 },
+  pro: { bots: 10, documents: 100, queries: 5000 },
+  enterprise: { bots: Infinity, documents: Infinity, queries: Infinity },
 };
 
 export async function GET() {
@@ -125,4 +125,52 @@ export async function DELETE(req: Request) {
     .eq("id", botId);
 
   return NextResponse.json({ success: true });
+}
+
+
+
+export async function PATCH(req: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const botId = searchParams.get("botId");
+
+  if (!botId) {
+    return NextResponse.json({ error: "botId required" }, { status: 400 });
+  }
+
+  const { name, welcome_message, primary_color, is_active } = await req.json();
+
+  // Verify bot belongs to user
+  const { data: bot } = await supabaseAdmin
+    .from("bots")
+    .select("id")
+    .eq("id", botId)
+    .eq("user_id", userId)
+    .single();
+
+  if (!bot) {
+    return NextResponse.json({ error: "Bot not found" }, { status: 404 });
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("bots")
+    .update({
+      name,
+      welcome_message,
+      primary_color,
+      is_active,
+    })
+    .eq("id", botId)
+    .select()
+    .single();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ bot: data });
 }
