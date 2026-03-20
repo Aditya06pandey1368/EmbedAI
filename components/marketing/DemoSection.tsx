@@ -7,7 +7,7 @@ import { MessageCircle, Sparkles } from "lucide-react";
 import ChatWidget from "@/components/widget/ChatWidget";
 
 // Replace with your actual demo bot ID
-const DEMO_BOT_ID = "d564891f-f35b-4d49-a0c9-61f2a301ef9d";
+const DEMO_BOT_ID = "3f2bf30b-a319-4687-be8c-eb0c2c1d5bee";
 
 export default function DemoSection() {
   const [showWidget, setShowWidget] = useState(false);
