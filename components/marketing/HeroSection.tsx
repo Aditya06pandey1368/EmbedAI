@@ -4,7 +4,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Bot, Sparkles } from "lucide-react";
 
 export default function HeroSection() {
   return (
@@ -85,19 +85,62 @@ export default function HeroSection() {
         </motion.p>
 
         {/* Dashboard Preview */}
+        {/* Dashboard Preview — replace placeholder */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.6 }}
           className="mt-16 rounded-2xl border border-slate-800 bg-slate-900 p-2 shadow-2xl shadow-cyan-500/5"
         >
-          <div className="rounded-xl bg-slate-800 h-64 md:h-96 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-cyan-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="w-8 h-8 text-cyan-400" />
-              </div>
-              <p className="text-slate-400 text-sm">Dashboard preview</p>
-              <p className="text-slate-600 text-xs mt-1">Coming soon as we build it together</p>
+          {/* Fake browser bar */}
+          <div className="bg-slate-800 rounded-t-xl px-4 py-2 flex items-center gap-2 border-b border-slate-700">
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-500/70" />
+              <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
+              <div className="w-3 h-3 rounded-full bg-green-500/70" />
+            </div>
+            <div className="flex-1 bg-slate-700 rounded-md px-3 py-1 text-slate-400 text-xs ml-2">
+              embedai.vercel.app/dashboard
+            </div>
+          </div>
+
+          {/* Fake dashboard content */}
+          <div className="p-6 space-y-4">
+            {/* Stats row */}
+            <div className="grid grid-cols-4 gap-3">
+              {[
+                { label: "Total Bots", value: "3", color: "text-cyan-400" },
+                { label: "Documents", value: "12", color: "text-purple-400" },
+                { label: "Questions", value: "1.2k", color: "text-green-400" },
+                { label: "This Week", value: "234", color: "text-yellow-400" },
+              ].map((stat) => (
+                <div key={stat.label} className="bg-slate-800 rounded-xl p-3">
+                  <p className="text-slate-500 text-xs mb-1">{stat.label}</p>
+                  <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Fake bot cards */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { name: "Support Bot", color: "#0ea5e9", messages: 423 },
+                { name: "Sales Assistant", color: "#8b5cf6", messages: 287 },
+                { name: "HR Bot", color: "#10b981", messages: 156 },
+              ].map((bot) => (
+                <div key={bot.name} className="bg-slate-800 rounded-xl p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: bot.color + "30" }}
+                    >
+                      <Bot className="w-4 h-4" style={{ color: bot.color }} />
+                    </div>
+                    <span className="text-white text-xs font-medium">{bot.name}</span>
+                  </div>
+                  <p className="text-slate-500 text-xs">{bot.messages} messages</p>
+                </div>
+              ))}
             </div>
           </div>
         </motion.div>

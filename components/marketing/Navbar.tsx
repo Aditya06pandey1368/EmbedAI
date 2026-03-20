@@ -4,13 +4,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useAuth, UserButton } from "@clerk/nextjs";
+import { useAuth, useUser, UserButton } from "@clerk/nextjs";
 import { Menu, X, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { isSignedIn } = useAuth();  // ← this replaces SignedIn/SignedOut
+  const { isSignedIn, isLoaded } = useAuth(); // isLoaded = Clerk has finished loading
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
@@ -33,18 +33,24 @@ export default function Navbar() {
             <Link href="#how-it-works" className="text-slate-400 hover:text-white transition-colors text-sm">
               How it works
             </Link>
-            <Link href="#pricing" className="text-slate-400 hover:text-white transition-colors text-sm">
-              Pricing
-            </Link>
             <Link href="#demo" className="text-slate-400 hover:text-white transition-colors text-sm">
               Demo
+            </Link>
+            <Link href="#pricing" className="text-slate-400 hover:text-white transition-colors text-sm">
+              Pricing
             </Link>
           </div>
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Not logged in */}
-            {!isSignedIn ? (
+            {/* Show nothing until Clerk has loaded — prevents flash */}
+            {!isLoaded ? (
+              // Skeleton placeholder — same size as buttons
+              <div className="flex items-center gap-3">
+                <div className="w-16 h-9 bg-slate-800 rounded-lg animate-pulse" />
+                <div className="w-32 h-9 bg-slate-700 rounded-lg animate-pulse" />
+              </div>
+            ) : !isSignedIn ? (
               <>
                 <Link href="/sign-in">
                   <Button variant="ghost" className="text-slate-300 hover:text-white">
@@ -58,7 +64,6 @@ export default function Navbar() {
                 </Link>
               </>
             ) : (
-              /* Logged in */
               <>
                 <Link href="/dashboard">
                   <Button variant="ghost" className="text-slate-300 hover:text-white">
@@ -89,9 +94,10 @@ export default function Navbar() {
         >
           <Link href="#features" className="text-slate-400 hover:text-white text-sm">Features</Link>
           <Link href="#how-it-works" className="text-slate-400 hover:text-white text-sm">How it works</Link>
+          <Link href="#demo" className="text-slate-400 hover:text-white text-sm">Demo</Link>
           <Link href="#pricing" className="text-slate-400 hover:text-white text-sm">Pricing</Link>
 
-          {!isSignedIn ? (
+          {isLoaded && !isSignedIn && (
             <>
               <Link href="/sign-in">
                 <Button variant="ghost" className="w-full text-slate-300">Sign in</Button>
@@ -100,7 +106,8 @@ export default function Navbar() {
                 <Button className="w-full bg-cyan-500 hover:bg-cyan-600">Get started free</Button>
               </Link>
             </>
-          ) : (
+          )}
+          {isLoaded && isSignedIn && (
             <Link href="/dashboard">
               <Button variant="ghost" className="w-full text-slate-300">Dashboard</Button>
             </Link>

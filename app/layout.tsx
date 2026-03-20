@@ -22,7 +22,6 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={inter.className}>
-          {/* Global top loading bar — shows on every page transition */}
           <NextTopLoader
             color="#0ea5e9"
             initialPosition={0.08}

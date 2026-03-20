@@ -9,14 +9,13 @@ export default async function DashboardPage() {
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
 
-  // Check admin BEFORE rendering anything
   const { data: user } = await supabaseAdmin
     .from("users")
     .select("is_admin")
     .eq("id", userId)
     .single();
 
-  // Redirect admin immediately — no flash
+  // Server-side redirect — happens before ANY HTML is sent to browser
   if (user?.is_admin) {
     redirect("/admin");
   }
