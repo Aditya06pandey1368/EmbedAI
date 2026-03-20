@@ -1,3 +1,5 @@
+// app/api/webhooks/clerk/route.ts
+
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
@@ -11,7 +13,6 @@ export async function POST(req: Request) {
     return new Response("Missing webhook secret", { status: 400 });
   }
 
-  // Get headers
   const headerPayload = await headers();
   const svix_id        = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
@@ -37,12 +38,19 @@ export async function POST(req: Request) {
     return new Response("Invalid webhook signature", { status: 400 });
   }
 
-  // Handle user.created
   if (evt.type === "user.created") {
     const { id, email_addresses, first_name, last_name } = evt.data;
 
-    const email = email_addresses[0]?.email_address || "";
-    const name  = `${first_name ?? ""} ${last_name ?? ""}`.trim();
+    const email = email_addresses?.[0]?.email_address || "";
+    const name  = `${first_name ?? ""} ${last_name ?? ""}`.trim() || "User";
+
+    // Skip test webhooks with empty email
+    if (!email) {
+      console.log("⚠️ Skipping test webhook with empty email");
+      return new Response("OK", { status: 200 });
+    }
+
+    console.log(`👤 New user webhook received: ${email}`);
 
     const { error } = await supabaseAdmin
       .from("users")
@@ -56,19 +64,15 @@ export async function POST(req: Request) {
       return new Response("Database error", { status: 500 });
     }
 
-    console.log(`✅ New user synced: ${email}`);
+    console.log(`✅ User synced: ${email}`);
   }
 
-  // Handle user.deleted
   if (evt.type === "user.deleted") {
     const { id } = evt.data;
-
-    await supabaseAdmin
-      .from("users")
-      .delete()
-      .eq("id", id as string);
-
-    console.log(`🗑️ User deleted: ${id}`);
+    if (id) {
+      await supabaseAdmin.from("users").delete().eq("id", id);
+      console.log(`🗑️ User deleted: ${id}`);
+    }
   }
 
   return new Response("OK", { status: 200 });
