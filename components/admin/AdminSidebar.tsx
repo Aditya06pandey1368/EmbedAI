@@ -45,9 +45,6 @@ export default function AdminSidebar() {
 
       {/* Main Nav */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        <p className="text-slate-600 text-xs font-medium uppercase tracking-wider px-4 mb-2">
-          Platform
-        </p>
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -101,14 +98,7 @@ export default function AdminSidebar() {
         </div>
       </nav>
 
-      {/* Back to Dashboard */}
-      <div className="p-4 border-t border-slate-800">
-        <Link href="/dashboard">
-          <div className="bg-slate-800 hover:bg-slate-700 transition-colors rounded-xl p-3 text-center cursor-pointer">
-            <p className="text-slate-400 text-xs">← Back to Dashboard</p>
-          </div>
-        </Link>
-      </div>
+      
     </aside>
   );
 }
