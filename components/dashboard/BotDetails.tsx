@@ -70,7 +70,7 @@ export default function BotDetails({ bot }: BotDetailsProps) {
       <Link href={`/dashboard/bots/${bot.id}/edit`}>
         <Button
           variant="outline"
-          className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 gap-2"
+          className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 gap-2 mb-3"
         >
           <Edit className="w-4 h-4" />
           Edit Bot

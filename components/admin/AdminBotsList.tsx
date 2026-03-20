@@ -2,7 +2,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bot, Check, X } from "lucide-react";
+import { Bot, Check, X, Edit } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface AdminBot {
   id: string;
@@ -25,11 +27,12 @@ export default function AdminBotsList({ bots }: { bots: AdminBot[] }) {
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
         {/* Header */}
-        <div className="grid grid-cols-5 gap-4 px-6 py-3 border-b border-slate-800 text-slate-400 text-xs font-medium uppercase tracking-wider">
+        <div className="grid grid-cols-6 gap-4 px-6 py-3 border-b border-slate-800 text-slate-400 text-xs font-medium uppercase tracking-wider">
           <div className="col-span-2">Bot</div>
           <div>Owner</div>
           <div>Messages</div>
           <div>Status</div>
+          <div>Actions</div>
         </div>
 
         {bots.length === 0 ? (
@@ -44,8 +47,9 @@ export default function AdminBotsList({ bots }: { bots: AdminBot[] }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: index * 0.05 }}
-              className="grid grid-cols-5 gap-4 px-6 py-4 border-b border-slate-800/50 items-center hover:bg-slate-800/30 transition-colors"
+              className="grid grid-cols-6 gap-4 px-6 py-4 border-b border-slate-800/50 items-center hover:bg-slate-800/30 transition-colors"
             >
+              {/* Bot info */}
               <div className="col-span-2 flex items-center gap-3">
                 <div className="w-9 h-9 bg-cyan-500/10 rounded-xl flex items-center justify-center">
                   <Bot className="w-5 h-5 text-cyan-400" />
@@ -58,6 +62,7 @@ export default function AdminBotsList({ bots }: { bots: AdminBot[] }) {
                 </div>
               </div>
 
+              {/* Owner */}
               <div>
                 <p className="text-slate-300 text-sm">
                   {bot.users?.name || "Unknown"}
@@ -65,10 +70,12 @@ export default function AdminBotsList({ bots }: { bots: AdminBot[] }) {
                 <p className="text-slate-500 text-xs">{bot.users?.email}</p>
               </div>
 
+              {/* Messages */}
               <div>
                 <p className="text-white text-sm">{bot.total_messages}</p>
               </div>
 
+              {/* Status */}
               <div>
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
                   bot.is_active
@@ -80,6 +87,20 @@ export default function AdminBotsList({ bots }: { bots: AdminBot[] }) {
                     : <><X className="w-3 h-3" /> Inactive</>
                   }
                 </span>
+              </div>
+
+              {/* Actions — Edit button */}
+              <div>
+                <Link href={`/dashboard/bots/${bot.id}/edit`}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 gap-1.5"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    Edit
+                  </Button>
+                </Link>
               </div>
             </motion.div>
           ))
