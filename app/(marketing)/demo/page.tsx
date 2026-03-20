@@ -18,8 +18,8 @@ export default function DemoPage() {
       </div>
 
       <ChatWidget
-        botId="0b63533e-3d08-44d3-9f50-8fe4a8b9a274"
-        botName="Aditya"
+        botId="3f2bf30b-a319-4687-be8c-eb0c2c1d5bee"
+        botName="EmbedAI"
         welcomeMessage="Hi! How can I help you today?"
         primaryColor="#0ea5e9"
       />
