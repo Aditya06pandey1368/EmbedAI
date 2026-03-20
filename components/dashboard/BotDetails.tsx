@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
+import { Edit } from "lucide-react";
 
 interface BotDetailsProps {
   bot: {
@@ -52,8 +53,8 @@ export default function BotDetails({ bot }: BotDetailsProps) {
 
         {/* Active status badge */}
         <div className={`px-3 py-1 rounded-full text-xs font-medium ${bot.is_active
-            ? "bg-green-500/10 text-green-400 border border-green-500/20"
-            : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+          ? "bg-green-500/10 text-green-400 border border-green-500/20"
+          : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
           }`}>
           {bot.is_active ? "● Active" : "○ Inactive"}
         </div>
@@ -66,6 +67,15 @@ export default function BotDetails({ bot }: BotDetailsProps) {
           </Button>
         </Link>
       </div>
+      <Link href={`/dashboard/bots/${bot.id}/edit`}>
+        <Button
+          variant="outline"
+          className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 gap-2"
+        >
+          <Edit className="w-4 h-4" />
+          Edit Bot
+        </Button>
+      </Link>
 
       {/* Bot Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
