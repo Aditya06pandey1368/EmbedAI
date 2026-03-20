@@ -25,41 +25,42 @@ export async function GET() {
 
   // Total messages
   // Get user's bot IDs first
-const { data: userBots } = await supabaseAdmin
-  .from("bots")
-  .select("id")
-  .eq("user_id", userId);
+  const { data: userBots } = await supabaseAdmin
+    .from("bots")
+    .select("id")
+    .eq("user_id", userId);
 
-const botIds = userBots?.map((b) => b.id) ?? [];
+  const botIds = userBots?.map((b) => b.id) ?? [];
 
-// Total messages — only from user's bots
-const { count: totalMessages } = botIds.length > 0
-  ? await supabaseAdmin
+  // Total messages — only from user's bots
+  const { count: totalMessages } = botIds.length > 0
+    ? await supabaseAdmin
       .from("chat_messages")
       .select("*", { count: "exact", head: true })
       .eq("role", "user")
       .in("bot_id", botIds)
-  : { count: 0 };
+    : { count: 0 };
 
-// Messages this week — only from user's bots
-const sevenDaysAgo = new Date();
-sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  // Messages this week — only from user's bots
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-const { count: messagesThisWeek } = botIds.length > 0
-  ? await supabaseAdmin
+  const { count: messagesThisWeek } = botIds.length > 0
+    ? await supabaseAdmin
       .from("chat_messages")
       .select("*", { count: "exact", head: true })
       .eq("role", "user")
       .in("bot_id", botIds)
       .gte("created_at", sevenDaysAgo.toISOString())
-  : { count: 0 };
+    : { count: 0 };
 
-  return NextResponse.json({
-    stats: {
-      totalBots: totalBots || 0,
-      totalDocuments: totalDocuments || 0,
-      totalMessages: totalMessages || 0,
-      messagesThisWeek: messagesThisWeek || 0,
-    },
-  });
+  // Add at the end of the GET function, replace the return:
+  return NextResponse.json(
+    { stats: { totalBots, totalDocuments, totalMessages, messagesThisWeek } },
+    {
+      headers: {
+        "Cache-Control": "private, max-age=30", // cache for 30 seconds
+      },
+    }
+  );
 }
