@@ -91,20 +91,7 @@ export default function Sidebar() {
           </Link>
         )}
 
-        <div className="bg-slate-800 rounded-xl p-4">
-          <p className="text-slate-400 text-xs mb-1">Current Plan</p>
-          <p className="text-white font-semibold text-sm capitalize">
-            {plan} {plan === "starter" ? "— Free" : ""}
-          </p>
-          {plan === "starter" && (
-            <Link
-              href="/dashboard/settings"
-              className="text-cyan-400 text-xs mt-2 block hover:text-cyan-300 transition-colors"
-            >
-              Upgrade to Pro →
-            </Link>
-          )}
-        </div>
+        
       </div>
     </aside>
   );

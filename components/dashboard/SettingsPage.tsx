@@ -50,13 +50,7 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
     loadUsage();
   }, []);
 
-  const planDetails = {
-    starter:    { label: "Starter",    color: "text-slate-400",  bg: "bg-slate-400/10",  desc: "Free forever"  },
-    pro:        { label: "Pro",        color: "text-cyan-400",   bg: "bg-cyan-400/10",   desc: "$29/month"     },
-    enterprise: { label: "Enterprise", color: "text-purple-400", bg: "bg-purple-400/10", desc: "Custom pricing" },
-  };
-
-  const plan = planDetails[user?.plan as keyof typeof planDetails] || planDetails.starter;
+  
 
   function handleSave() {
     setSaved(true);
@@ -140,25 +134,7 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
           <h2 className="text-white font-bold">Plan & Billing</h2>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${plan.bg} ${plan.color}`}>
-                {plan.label}
-              </span>
-            </div>
-            <p className="text-slate-400 text-sm">{plan.desc}</p>
-          </div>
-          <div className="flex flex-col items-start sm:items-end gap-1">
-            <Button
-              disabled
-              className="w-full sm:w-auto bg-slate-700 text-slate-400 cursor-not-allowed gap-2"
-            >
-              Upgrade Plan — Coming Soon
-            </Button>
-            <p className="text-slate-600 text-xs">Paid plans will be available soon.</p>
-          </div>
-        </div>
+        
 
         {/* Real Usage Stats */}
         <div className="mt-6 pt-6 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-6">

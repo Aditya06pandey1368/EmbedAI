@@ -36,9 +36,6 @@ export default function Navbar() {
             <Link href="#demo" className="text-slate-400 hover:text-white transition-colors text-sm">
               Demo
             </Link>
-            <Link href="#pricing" className="text-slate-400 hover:text-white transition-colors text-sm">
-              Pricing
-            </Link>
           </div>
 
           {/* Auth Buttons */}
@@ -95,7 +92,6 @@ export default function Navbar() {
           <Link href="#features" className="text-slate-400 hover:text-white text-sm">Features</Link>
           <Link href="#how-it-works" className="text-slate-400 hover:text-white text-sm">How it works</Link>
           <Link href="#demo" className="text-slate-400 hover:text-white text-sm">Demo</Link>
-          <Link href="#pricing" className="text-slate-400 hover:text-white text-sm">Pricing</Link>
 
           {isLoaded && !isSignedIn && (
             <>
