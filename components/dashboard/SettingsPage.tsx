@@ -4,10 +4,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, User, CreditCard, Bell, Loader2 } from "lucide-react";
+import { User, BarChart2 } from "lucide-react";
 
 interface UserData {
   id: string;
@@ -24,17 +23,9 @@ interface Usage {
 
 export default function SettingsPage({ user }: { user: UserData | null }) {
   const { user: clerkUser } = useUser();
-  const [saved, setSaved] = useState(false);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
 
-  const [notifications, setNotifications] = useState({
-    weeklyReport:  true,
-    botAlerts:     true,
-    announcements: false,
-  });
-
-  // Fetch real usage data
   useEffect(() => {
     async function loadUsage() {
       try {
@@ -50,24 +41,6 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
     loadUsage();
   }, []);
 
-  
-
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
-
-  function toggleNotification(key: keyof typeof notifications) {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
-  }
-
-  const notificationItems = [
-    { key: "weeklyReport"  as const, label: "Weekly usage report",         desc: "Get a summary every Monday"                   },
-    { key: "botAlerts"     as const, label: "Bot error alerts",             desc: "Know when your bot fails to respond"           },
-    { key: "announcements" as const, label: "New feature announcements",    desc: "Be the first to know about updates"            },
-  ];
-
-  // Usage items with real data
   const usageItems = usage
     ? [
         { label: "Bots",       used: usage.bots.used,      limit: usage.bots.limit      },
@@ -122,22 +95,19 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
         </div>
       </motion.div>
 
-      {/* Plan Section */}
+      {/* Usage & Plan Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 w-full"
       >
-        <div className="flex items-center gap-2 mb-4">
-          <CreditCard className="w-5 h-5 text-cyan-400" />
-          <h2 className="text-white font-bold">Monthly Usage</h2>
+        <div className="flex items-center gap-2 mb-6">
+          <BarChart2 className="w-5 h-5 text-cyan-400" />
+          <h2 className="text-white font-bold">Usage & Plan</h2>
         </div>
 
-        
-
-        {/* Real Usage Stats */}
-        <div className="mt-6 pt-6 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {usageLoading ? (
             [...Array(3)].map((_, i) => (
               <div key={i} className="space-y-2 animate-pulse">
@@ -189,55 +159,6 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
         </div>
       </motion.div>
 
-      {/* Notifications Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 w-full"
-      >
-        <div className="flex items-center gap-2 mb-4">
-          <Bell className="w-5 h-5 text-cyan-400" />
-          <h2 className="text-white font-bold">Notifications</h2>
-        </div>
-
-        <div className="space-y-4 max-w-4xl">
-          {notificationItems.map((item) => {
-            const isOn = notifications[item.key];
-            return (
-              <div key={item.key} className="flex items-center justify-between py-2 gap-4">
-                <div className="flex-1">
-                  <p className="text-white text-sm font-medium">{item.label}</p>
-                  <p className="text-slate-500 text-xs mt-0.5">{item.desc}</p>
-                </div>
-                <button
-                  onClick={() => toggleNotification(item.key)}
-                  className={`w-11 h-6 rounded-full relative transition-colors duration-200 flex-shrink-0 ${
-                    isOn ? "bg-cyan-500" : "bg-slate-700"
-                  }`}
-                >
-                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
-                    isOn ? "translate-x-5" : "translate-x-1"
-                  }`} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-6 pt-6 border-t border-slate-800">
-          <Button
-            onClick={handleSave}
-            className="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-600 text-white gap-2"
-          >
-            {saved ? (
-              <><Check className="w-4 h-4" /> Saved!</>
-            ) : (
-              "Save preferences"
-            )}
-          </Button>
-        </div>
-      </motion.div>
     </div>
   );
 }
