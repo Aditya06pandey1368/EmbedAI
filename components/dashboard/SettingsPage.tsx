@@ -131,7 +131,7 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
       >
         <div className="flex items-center gap-2 mb-4">
           <CreditCard className="w-5 h-5 text-cyan-400" />
-          <h2 className="text-white font-bold">Plan & Billing</h2>
+          <h2 className="text-white font-bold">Monthly Usage</h2>
         </div>
 
         

@@ -74,7 +74,6 @@ export default function AdminUsers() {
             <div className="col-span-2">User</div>
             <div>Plan</div>
             <div>Bots</div>
-            <div>Actions</div>
           </div>
 
           {/* Table Rows */}
@@ -120,21 +119,7 @@ export default function AdminUsers() {
                 {user.bots?.[0]?.count ?? 0} bots
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-2">
-                {!user.is_admin && (
-                  <select
-                    value={user.plan}
-                    onChange={(e) => updatePlan(user.id, e.target.value)}
-                    disabled={updating === user.id}
-                    className="bg-slate-800 border border-slate-700 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-cyan-500 disabled:opacity-50"
-                  >
-                    <option value="starter">Starter</option>
-                    <option value="pro">Pro</option>
-                    <option value="enterprise">Enterprise</option>
-                  </select>
-                )}
-              </div>
+              
             </motion.div>
           ))}
         </div>
