@@ -1,13 +1,13 @@
 // components/dashboard/SettingsPage.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, User, CreditCard, Bell } from "lucide-react";
+import { Check, User, CreditCard, Bell, Loader2 } from "lucide-react";
 
 interface UserData {
   id: string;
@@ -16,20 +16,43 @@ interface UserData {
   plan: string;
 }
 
+interface Usage {
+  bots:      { used: number; limit: number };
+  documents: { used: number; limit: number };
+  queries:   { used: number; limit: number };
+}
+
 export default function SettingsPage({ user }: { user: UserData | null }) {
   const { user: clerkUser } = useUser();
   const [saved, setSaved] = useState(false);
+  const [usage, setUsage] = useState<Usage | null>(null);
+  const [usageLoading, setUsageLoading] = useState(true);
 
-  // Fix 3: Each toggle has its own state
   const [notifications, setNotifications] = useState({
-    weeklyReport: true,
-    botAlerts: true,
+    weeklyReport:  true,
+    botAlerts:     true,
     announcements: false,
   });
 
+  // Fetch real usage data
+  useEffect(() => {
+    async function loadUsage() {
+      try {
+        const res = await fetch("/api/user/usage");
+        const data = await res.json();
+        setUsage(data.usage);
+      } catch {
+        console.error("Failed to load usage");
+      } finally {
+        setUsageLoading(false);
+      }
+    }
+    loadUsage();
+  }, []);
+
   const planDetails = {
-    starter: { label: "Starter", color: "text-slate-400", bg: "bg-slate-400/10", desc: "Free forever" },
-    pro: { label: "Pro", color: "text-cyan-400", bg: "bg-cyan-400/10", desc: "$29/month" },
+    starter:    { label: "Starter",    color: "text-slate-400",  bg: "bg-slate-400/10",  desc: "Free forever"  },
+    pro:        { label: "Pro",        color: "text-cyan-400",   bg: "bg-cyan-400/10",   desc: "$29/month"     },
     enterprise: { label: "Enterprise", color: "text-purple-400", bg: "bg-purple-400/10", desc: "Custom pricing" },
   };
 
@@ -45,22 +68,19 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
   }
 
   const notificationItems = [
-    {
-      key: "weeklyReport" as const,
-      label: "Weekly usage report",
-      desc: "Get a summary every Monday",
-    },
-    {
-      key: "botAlerts" as const,
-      label: "Bot error alerts",
-      desc: "Know when your bot fails to respond",
-    },
-    {
-      key: "announcements" as const,
-      label: "New feature announcements",
-      desc: "Be the first to know about updates",
-    },
+    { key: "weeklyReport"  as const, label: "Weekly usage report",         desc: "Get a summary every Monday"                   },
+    { key: "botAlerts"     as const, label: "Bot error alerts",             desc: "Know when your bot fails to respond"           },
+    { key: "announcements" as const, label: "New feature announcements",    desc: "Be the first to know about updates"            },
   ];
+
+  // Usage items with real data
+  const usageItems = usage
+    ? [
+        { label: "Bots",       used: usage.bots.used,      limit: usage.bots.limit      },
+        { label: "Documents",  used: usage.documents.used,  limit: usage.documents.limit  },
+        { label: "Queries/mo", used: usage.queries.used,    limit: usage.queries.limit    },
+      ]
+    : [];
 
   return (
     <div className="w-full space-y-6 pb-8">
@@ -101,8 +121,6 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
               className="bg-slate-800 border-slate-700 text-white disabled:opacity-60 w-full"
             />
           </div>
-
-          {/* Fix 1: Removed broken Clerk link, replaced with helpful note */}
           <p className="text-slate-500 text-xs sm:text-sm">
             Profile information is managed through your authentication provider.
             Contact support to update your details.
@@ -131,8 +149,6 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
             </div>
             <p className="text-slate-400 text-sm">{plan.desc}</p>
           </div>
-
-          {/* Fix 2: Show "Coming Soon" instead of a broken upgrade button */}
           <div className="flex flex-col items-start sm:items-end gap-1">
             <Button
               disabled
@@ -140,33 +156,60 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
             >
               Upgrade Plan — Coming Soon
             </Button>
-            <p className="text-slate-600 text-xs">
-              Paid plans will be available soon.
-            </p>
+            <p className="text-slate-600 text-xs">Paid plans will be available soon.</p>
           </div>
         </div>
 
-        {/* Plan limits */}
-        <div className="mt-6 pt-6 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 lg:gap-12">
-          {[
-            { label: "Bots", used: 1, limit: user?.plan === "pro" ? 10 : 1 },
-            { label: "Documents", used: 2, limit: user?.plan === "pro" ? 100 : 5 },
-            { label: "Queries/mo", used: 12, limit: user?.plan === "pro" ? 5000 : 100 },
-          ].map((item) => (
-            <div key={item.label} className="w-full">
-              <p className="text-slate-400 text-xs mb-1">{item.label}</p>
-              <p className="text-white font-bold text-sm">
-                {item.used}
-                <span className="text-slate-500 font-normal"> / {item.limit}</span>
-              </p>
-              <div className="mt-2 h-1.5 bg-slate-700 rounded-full overflow-hidden w-full">
-                <div
-                  className="h-full bg-cyan-500 rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min((item.used / item.limit) * 100, 100)}%` }}
-                />
+        {/* Real Usage Stats */}
+        <div className="mt-6 pt-6 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {usageLoading ? (
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="space-y-2 animate-pulse">
+                <div className="h-3 bg-slate-700 rounded w-1/2" />
+                <div className="h-5 bg-slate-700 rounded w-1/3" />
+                <div className="h-1.5 bg-slate-700 rounded-full w-full" />
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            usageItems.map((item) => {
+              const percentage = item.limit === Infinity
+                ? 0
+                : Math.min((item.used / item.limit) * 100, 100);
+
+              const isNearLimit = percentage >= 80;
+              const isAtLimit   = percentage >= 100;
+
+              return (
+                <div key={item.label} className="w-full">
+                  <p className="text-slate-400 text-xs mb-1">{item.label}</p>
+                  <p className="text-white font-bold text-sm">
+                    {item.used}
+                    <span className="text-slate-500 font-normal">
+                      {" "}/ {item.limit === Infinity ? "∞" : item.limit}
+                    </span>
+                  </p>
+                  <div className="mt-2 h-1.5 bg-slate-700 rounded-full overflow-hidden w-full">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        isAtLimit
+                          ? "bg-red-500"
+                          : isNearLimit
+                          ? "bg-yellow-500"
+                          : "bg-cyan-500"
+                      }`}
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
+                  {isAtLimit && (
+                    <p className="text-red-400 text-xs mt-1">Limit reached!</p>
+                  )}
+                  {isNearLimit && !isAtLimit && (
+                    <p className="text-yellow-400 text-xs mt-1">Almost at limit</p>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </motion.div>
 
@@ -186,27 +229,20 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
           {notificationItems.map((item) => {
             const isOn = notifications[item.key];
             return (
-              <div
-                key={item.key}
-                className="flex items-center justify-between py-2 gap-4"
-              >
+              <div key={item.key} className="flex items-center justify-between py-2 gap-4">
                 <div className="flex-1">
                   <p className="text-white text-sm font-medium">{item.label}</p>
                   <p className="text-slate-500 text-xs mt-0.5">{item.desc}</p>
                 </div>
-
-                {/* Fix 3: Working toggle button */}
                 <button
                   onClick={() => toggleNotification(item.key)}
                   className={`w-11 h-6 rounded-full relative transition-colors duration-200 flex-shrink-0 ${
                     isOn ? "bg-cyan-500" : "bg-slate-700"
                   }`}
                 >
-                  <div
-                    className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
-                      isOn ? "translate-x-5" : "translate-x-1"
-                    }`}
-                  />
+                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${
+                    isOn ? "translate-x-5" : "translate-x-1"
+                  }`} />
                 </button>
               </div>
             );
@@ -226,7 +262,6 @@ export default function SettingsPage({ user }: { user: UserData | null }) {
           </Button>
         </div>
       </motion.div>
-
     </div>
   );
 }
