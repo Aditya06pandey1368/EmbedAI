@@ -5,11 +5,14 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const PLAN_LIMITS = {
-  starter: { bots: 1, documents: 5, queries: 100 },
-  pro: { bots: 10, documents: 100, queries: 5000 },
+  starter:    { bots: 1,        documents: 5,        queries: 100      },
+  pro:        { bots: 10,       documents: 100,      queries: 5000     },
   enterprise: { bots: Infinity, documents: Infinity, queries: Infinity },
 };
 
+// ============================================
+// GET — fetch all bots for logged in user
+// ============================================
 export async function GET() {
   const { userId } = await auth();
   if (!userId) {
@@ -29,6 +32,9 @@ export async function GET() {
   return NextResponse.json({ bots: data });
 }
 
+// ============================================
+// POST — create a new bot
+// ============================================
 export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) {
@@ -41,17 +47,31 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Bot name is required" }, { status: 400 });
   }
 
-  // Get user plan
-  const { data: user } = await supabaseAdmin
+  // STEP 1: Make sure user exists in DB first
+  // This handles cases where webhook was slow or failed
+  const { data: existingUser } = await supabaseAdmin
     .from("users")
-    .select("plan")
+    .select("id, plan")
     .eq("id", userId)
     .single();
 
-  const plan = (user?.plan || "starter") as keyof typeof PLAN_LIMITS;
+  // If user doesn't exist in our DB — create them
+  if (!existingUser) {
+    await supabaseAdmin
+      .from("users")
+      .insert({
+        id:       userId,
+        email:    "",
+        name:     "",
+        plan:     "starter",
+        is_admin: false,
+      });
+  }
+
+  // STEP 2: Check plan limits
+  const plan = (existingUser?.plan || "starter") as keyof typeof PLAN_LIMITS;
   const limit = PLAN_LIMITS[plan].bots;
 
-  // Count existing bots
   const { count: botCount } = await supabaseAdmin
     .from("bots")
     .select("*", { count: "exact", head: true })
@@ -67,32 +87,29 @@ export async function POST(req: Request) {
     );
   }
 
-  // Upsert user
-  await supabaseAdmin
-    .from("users")
-    .upsert(
-      { id: userId, email: "" },
-      { onConflict: "id", ignoreDuplicates: true }
-    );
-
+  // STEP 3: Create the bot
   const { data, error } = await supabaseAdmin
     .from("bots")
     .insert({
-      user_id: userId,
-      name: name.trim(),
+      user_id:         userId,
+      name:            name.trim(),
       welcome_message: welcome_message || "Hi! How can I help you today?",
-      primary_color: primary_color || "#0ea5e9",
+      primary_color:   primary_color   || "#0ea5e9",
     })
     .select()
     .single();
 
   if (error) {
+    console.error("Bot insert error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   return NextResponse.json({ bot: data }, { status: 201 });
 }
 
+// ============================================
+// DELETE — delete a bot
+// ============================================
 export async function DELETE(req: Request) {
   const { userId } = await auth();
   if (!userId) {
@@ -118,7 +135,6 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Bot not found" }, { status: 404 });
   }
 
-  // Delete bot — cascades to documents, chunks, sessions, messages
   await supabaseAdmin
     .from("bots")
     .delete()
@@ -127,8 +143,9 @@ export async function DELETE(req: Request) {
   return NextResponse.json({ success: true });
 }
 
-
-
+// ============================================
+// PATCH — update a bot
+// ============================================
 export async function PATCH(req: Request) {
   const { userId } = await auth();
   if (!userId) {
