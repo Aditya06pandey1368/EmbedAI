@@ -3,10 +3,13 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Bot, Sparkles } from "lucide-react";
 
 export default function HeroSection() {
+  const { isSignedIn } = useAuth();
+
   return (
     <section className="min-h-screen flex items-center justify-center px-4 pt-25">
       <div className="max-w-4xl mx-auto text-center">
@@ -54,7 +57,8 @@ export default function HeroSection() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <Link href="/sign-up">
+          {/* ← Smart button: dashboard if logged in, signup if not */}
+          <Link href={isSignedIn ? "/dashboard/bots/new" : "/sign-up"}>
             <Button
               size="lg"
               className="bg-cyan-500 hover:bg-cyan-600 text-white px-8 py-6 text-lg font-semibold group"
@@ -63,6 +67,7 @@ export default function HeroSection() {
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
+
           <Link href="#how-it-works">
             <Button
               size="lg"
@@ -85,7 +90,6 @@ export default function HeroSection() {
         </motion.p>
 
         {/* Dashboard Preview */}
-        {/* Dashboard Preview — replace placeholder */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -106,13 +110,12 @@ export default function HeroSection() {
 
           {/* Fake dashboard content */}
           <div className="p-6 space-y-4">
-            {/* Stats row */}
             <div className="grid grid-cols-4 gap-3">
               {[
-                { label: "Total Bots", value: "3", color: "text-cyan-400" },
-                { label: "Documents", value: "12", color: "text-purple-400" },
-                { label: "Questions", value: "1.2k", color: "text-green-400" },
-                { label: "This Week", value: "234", color: "text-yellow-400" },
+                { label: "Total Bots", value: "3",    color: "text-cyan-400"   },
+                { label: "Documents",  value: "12",   color: "text-purple-400" },
+                { label: "Questions",  value: "1.2k", color: "text-green-400"  },
+                { label: "This Week",  value: "234",  color: "text-yellow-400" },
               ].map((stat) => (
                 <div key={stat.label} className="bg-slate-800 rounded-xl p-3">
                   <p className="text-slate-500 text-xs mb-1">{stat.label}</p>
@@ -121,12 +124,11 @@ export default function HeroSection() {
               ))}
             </div>
 
-            {/* Fake bot cards */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { name: "Support Bot", color: "#0ea5e9", messages: 423 },
+                { name: "Support Bot",     color: "#0ea5e9", messages: 423 },
                 { name: "Sales Assistant", color: "#8b5cf6", messages: 287 },
-                { name: "HR Bot", color: "#10b981", messages: 156 },
+                { name: "HR Bot",          color: "#10b981", messages: 156 },
               ].map((bot) => (
                 <div key={bot.name} className="bg-slate-800 rounded-xl p-3">
                   <div className="flex items-center gap-2 mb-2">
