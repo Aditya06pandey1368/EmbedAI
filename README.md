@@ -308,9 +308,8 @@ git push origin main  # Auto-deploys via GitHub integration
 
 ### Post-deployment Setup
 1. Add environment variables in Vercel dashboard
-2. Configure Clerk webhook: `https://yourdomain.com/api/webhooks/clerk`
-3. Add domain to Supabase allowed origins
-4. Set `NEXT_PUBLIC_APP_URL` to your Vercel URL
+2. Add domain to Supabase allowed origins
+3. Set `NEXT_PUBLIC_APP_URL` to your Vercel URL
 
 ---
 
@@ -318,7 +317,7 @@ git push origin main  # Auto-deploys via GitHub integration
 
 **Aditya Pandey**
 
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=for-the-badge&logo=github)](https://github.com/yourusername)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin)](https://linkedin.com/in/yourusername)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-black?style=for-the-badge&logo=github)]([https://github.com/yourusername](https://github.com/Aditya06pandey1368))
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin)](www.linkedin.com/in/adityapandey06)
 
 ---
