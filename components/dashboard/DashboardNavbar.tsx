@@ -28,7 +28,6 @@ export default function DashboardNavbar() {
           size="icon"
           className="text-slate-400 hover:text-white relative"
         >
-          <Bell className="w-5 h-5" />
         </Button>
         <UserButton />
       </div>
