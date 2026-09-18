@@ -27,7 +27,7 @@ EmbedAI is a production-ready B2B SaaS platform that allows businesses to:
 
 
 
-https://github.com/user-attachments/assets/c055897b-650a-4f77-a10b-17624b42e17a
+
 
 
 
