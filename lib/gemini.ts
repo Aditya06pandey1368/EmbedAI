@@ -1,9 +1,16 @@
-// lib/gemini.ts
 
-import { pipeline } from "@huggingface/transformers";
+/**
+ * lib/gemini.ts
+ *
+ * Chat generation: Groq
+ * Text embeddings: Gemini Embedding 2 API
+ * Vector dimension: 384
+ */
+
+type EmbeddingPurpose = "query" | "document";
 
 // ============================================
-// CHAT — Groq API
+// CHAT GENERATION — GROQ
 // ============================================
 
 export async function generateChatResponse(
@@ -38,12 +45,12 @@ export async function generateChatResponse(
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const details = await response.text();
 
     console.error(
-      "[Groq] Chat generation failed:",
+      "[Groq] Chat request failed:",
       response.status,
-      errorText
+      details
     );
 
     throw new Error("Failed to generate the AI response.");
@@ -57,81 +64,25 @@ export async function generateChatResponse(
     }>;
   };
 
-  const content = data.choices?.[0]?.message?.content;
+  const answer = data.choices?.[0]?.message?.content;
 
-  if (typeof content !== "string" || !content.trim()) {
+  if (typeof answer !== "string" || !answer.trim()) {
     throw new Error("Groq returned an empty response.");
   }
 
-  return content;
+  return answer;
 }
 
 // ============================================
-// EMBEDDINGS — Local Transformers.js
-// No hosted inference API or API token required.
+// EMBEDDINGS — GEMINI EMBEDDING 2 API
+// No local ONNX Runtime or native Sharp dependency.
 // ============================================
-
-const EMBEDDING_MODEL =
-  "Xenova/all-MiniLM-L6-v2";
 
 const EMBEDDING_DIMENSIONS = 384;
 
-type EmbeddingOutput = {
-  data: Float32Array | number[];
-};
-
-type EmbeddingExtractor = (
-  text: string,
-  options: {
-    pooling: "mean";
-    normalize: true;
-  }
-) => Promise<EmbeddingOutput>;
-
-// Keep a single model-loading promise so concurrent
-// requests don't initialize duplicate model instances.
-let extractorPromise: Promise<EmbeddingExtractor> | null =
-  null;
-
-async function getEmbeddingExtractor(): Promise<EmbeddingExtractor> {
-  if (!extractorPromise) {
-    extractorPromise = (async () => {
-      const extractor = await pipeline(
-        "feature-extraction",
-        EMBEDDING_MODEL,
-        {
-          dtype: "q8",
-        }
-      );
-
-      return extractor as unknown as EmbeddingExtractor;
-    })().catch((error: unknown) => {
-      // Allow a later request to retry model loading.
-      extractorPromise = null;
-
-      console.error(
-        "[Embeddings] Could not load local model:",
-        error
-      );
-
-      throw new Error(
-        "Failed to load the local embedding model."
-      );
-    });
-  }
-
-  return extractorPromise;
-}
-
-/**
- * Converts text into a normalized 384-dimensional vector.
- *
- * The optional second argument is retained for backward
- * compatibility with callers of the old function.
- */
 export async function generateEmbedding(
   text: string,
-  _retries = 3
+  purposeOrLegacyRetries: EmbeddingPurpose | number = "query"
 ): Promise<number[]> {
   if (typeof text !== "string" || !text.trim()) {
     throw new Error(
@@ -139,38 +90,77 @@ export async function generateEmbedding(
     );
   }
 
-  try {
-    const extractor = await getEmbeddingExtractor();
+  const apiKey = process.env.GEMINI_API_KEY;
 
-    const output = await extractor(text, {
-      pooling: "mean",
-      normalize: true,
-    });
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not configured.");
+  }
 
-    const embedding = Array.from(output.data);
+  // Support older calls that supplied a numeric retry argument.
+  // Update document-processing calls to pass "document" explicitly.
+  const purpose: EmbeddingPurpose =
+    typeof purposeOrLegacyRetries === "string"
+      ? purposeOrLegacyRetries
+      : "query";
 
-    if (embedding.length !== EMBEDDING_DIMENSIONS) {
-      throw new Error(
-        `Expected ${EMBEDDING_DIMENSIONS} embedding values, ` +
-          `but received ${embedding.length}.`
-      );
+  // Use the same embedding model for documents and queries,
+  // with the appropriate text format for each task.
+  const formattedText =
+    purpose === "document"
+      ? `title: none | text: ${text.trim()}`
+      : `task: search result | query: ${text.trim()}`;
+
+  const response = await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      body: JSON.stringify({
+        content: {
+          parts: [{ text: formattedText }],
+        },
+        output_dimensionality: EMBEDDING_DIMENSIONS,
+      }),
     }
+  );
 
-    if (!embedding.every(Number.isFinite)) {
-      throw new Error(
-        "The embedding contains invalid numeric values."
-      );
-    }
+  if (!response.ok) {
+    const details = await response.text();
 
-    return embedding;
-  } catch (error) {
     console.error(
-      "[Embeddings] Local embedding generation failed:",
-      error
+      "[Gemini Embeddings] Request failed:",
+      response.status,
+      details
     );
 
     throw new Error(
-      "Local embedding generation failed. Check the server logs."
+      "Text embedding failed. Check server logs."
     );
   }
+
+  const data = (await response.json()) as {
+    embedding?: {
+      values?: number[];
+    };
+  };
+
+  const embedding = data.embedding?.values;
+
+  if (
+    !Array.isArray(embedding) ||
+    embedding.length !== EMBEDDING_DIMENSIONS ||
+    !embedding.every(Number.isFinite)
+  ) {
+    console.error(
+      "[Gemini Embeddings] Invalid response dimensions:",
+      embedding?.length
+    );
+
+    throw new Error("Invalid embedding response.");
+  }
+
+  return embedding;
 }
