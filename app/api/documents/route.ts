@@ -5,6 +5,8 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { processDocument } from "@/services/document-processor";
 
+export const runtime = "nodejs";
+
 // GET — fetch all documents for a bot
 export async function GET(req: Request) {
   const { userId } = await auth();

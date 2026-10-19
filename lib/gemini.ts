@@ -1,20 +1,36 @@
 // lib/gemini.ts
 
+import { pipeline } from "@huggingface/transformers";
+
 // ============================================
 // CHAT — Groq API
 // ============================================
-export async function generateChatResponse(prompt: string): Promise<string> {
+
+export async function generateChatResponse(
+  prompt: string
+): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("GROQ_API_KEY is not configured.");
+  }
+
   const response = await fetch(
     "https://api.groq.com/openai/v1/chat/completions",
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [{ role: "user", content: prompt }],
+        model: "openai/gpt-oss-20b",
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
         max_tokens: 1024,
         temperature: 0.7,
       }),
@@ -22,60 +38,139 @@ export async function generateChatResponse(prompt: string): Promise<string> {
   );
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Groq API error: ${error}`);
+    const errorText = await response.text();
+
+    console.error(
+      "[Groq] Chat generation failed:",
+      response.status,
+      errorText
+    );
+
+    throw new Error("Failed to generate the AI response.");
   }
 
-  const data = await response.json();
-  return data.choices[0].message.content;
+  const data = (await response.json()) as {
+    choices?: Array<{
+      message?: {
+        content?: string | null;
+      };
+    }>;
+  };
+
+  const content = data.choices?.[0]?.message?.content;
+
+  if (typeof content !== "string" || !content.trim()) {
+    throw new Error("Groq returned an empty response.");
+  }
+
+  return content;
 }
 
 // ============================================
-// EMBEDDINGS — HuggingFace with retry
+// EMBEDDINGS — Local Transformers.js
+// No hosted inference API or API token required.
 // ============================================
-export async function generateEmbedding(
+
+const EMBEDDING_MODEL =
+  "Xenova/all-MiniLM-L6-v2";
+
+const EMBEDDING_DIMENSIONS = 384;
+
+type EmbeddingOutput = {
+  data: Float32Array | number[];
+};
+
+type EmbeddingExtractor = (
   text: string,
-  retries: number = 3
-): Promise<number[]> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(
-        "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction",
+  options: {
+    pooling: "mean";
+    normalize: true;
+  }
+) => Promise<EmbeddingOutput>;
+
+// Keep a single model-loading promise so concurrent
+// requests don't initialize duplicate model instances.
+let extractorPromise: Promise<EmbeddingExtractor> | null =
+  null;
+
+async function getEmbeddingExtractor(): Promise<EmbeddingExtractor> {
+  if (!extractorPromise) {
+    extractorPromise = (async () => {
+      const extractor = await pipeline(
+        "feature-extraction",
+        EMBEDDING_MODEL,
         {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${process.env.HUGGINGFACE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ inputs: text }),
+          dtype: "q8",
         }
       );
 
-      // If model is loading — wait and retry
-      if (response.status === 503) {
-        console.log(`⏳ HuggingFace model loading, retry ${i + 1}/${retries}...`);
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        continue;
-      }
+      return extractor as unknown as EmbeddingExtractor;
+    })().catch((error: unknown) => {
+      // Allow a later request to retry model loading.
+      extractorPromise = null;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HuggingFace error: ${errorText}`);
-      }
+      console.error(
+        "[Embeddings] Could not load local model:",
+        error
+      );
 
-      const data = await response.json();
-
-      if (Array.isArray(data[0])) {
-        return data[0] as number[];
-      }
-      return data as number[];
-
-    } catch (err) {
-      if (i === retries - 1) throw err;
-      console.log(`Retry ${i + 1}/${retries}...`);
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-    }
+      throw new Error(
+        "Failed to load the local embedding model."
+      );
+    });
   }
 
-  throw new Error("Embedding failed after all retries");
+  return extractorPromise;
+}
+
+/**
+ * Converts text into a normalized 384-dimensional vector.
+ *
+ * The optional second argument is retained for backward
+ * compatibility with callers of the old function.
+ */
+export async function generateEmbedding(
+  text: string,
+  _retries = 3
+): Promise<number[]> {
+  if (typeof text !== "string" || !text.trim()) {
+    throw new Error(
+      "Cannot generate an embedding for empty text."
+    );
+  }
+
+  try {
+    const extractor = await getEmbeddingExtractor();
+
+    const output = await extractor(text, {
+      pooling: "mean",
+      normalize: true,
+    });
+
+    const embedding = Array.from(output.data);
+
+    if (embedding.length !== EMBEDDING_DIMENSIONS) {
+      throw new Error(
+        `Expected ${EMBEDDING_DIMENSIONS} embedding values, ` +
+          `but received ${embedding.length}.`
+      );
+    }
+
+    if (!embedding.every(Number.isFinite)) {
+      throw new Error(
+        "The embedding contains invalid numeric values."
+      );
+    }
+
+    return embedding;
+  } catch (error) {
+    console.error(
+      "[Embeddings] Local embedding generation failed:",
+      error
+    );
+
+    throw new Error(
+      "Local embedding generation failed. Check the server logs."
+    );
+  }
 }

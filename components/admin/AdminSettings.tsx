@@ -31,7 +31,7 @@ export default function AdminSettings() {
       title: "AI Services",
       desc: "LLM and embedding configuration",
       items: [
-        { label: "Chat Model", value: "Groq — llama-3.1-8b-instant" },
+        { label: "Chat Model", value: "Groq — openai/gpt-oss-20b" },
         { label: "Embeddings", value: "HuggingFace — all-MiniLM-L6-v2" },
         { label: "Dimensions", value: "384" },
       ],

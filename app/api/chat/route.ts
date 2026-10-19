@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { generateChatResponse } from "@/lib/gemini";
 import { findRelevantChunks, buildPrompt } from "@/services/rag";
+export const runtime = "nodejs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,19 +34,29 @@ export async function POST(req: Request) {
     }
 
     // Fetch bot
-    const { data: bot } = await supabaseAdmin
-      .from("bots")
-      .select("*")
-      .eq("id", botId)
-      .eq("is_active", true)
-      .single();
+    const { data: bot, error: botError } =
+  await supabaseAdmin
+    .from("bots")
+    .select("*")
+    .eq("id", botId)
+    .eq("is_active", true)
+    .maybeSingle();
 
-    if (!bot) {
-      return NextResponse.json(
-        { error: "Bot not found" },
-        { status: 404, headers: corsHeaders }
-      );
-    }
+if (botError) {
+  console.error("Bot lookup failed:", botError);
+
+  return NextResponse.json(
+    { error: "Unable to process your request right now." },
+    { status: 500, headers: corsHeaders }
+  );
+}
+
+if (!bot) {
+  return NextResponse.json(
+    { error: "This chatbot is unavailable." },
+    { status: 404, headers: corsHeaders }
+  );
+}
 
     // ============================================
     // RATE LIMITING — Check monthly query limit
